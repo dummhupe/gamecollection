@@ -40,7 +40,7 @@ class Ui
 
       container = columns[get_column_index(group, data_raw)]
       container.pack_start(Gtk::Label.new, false, false)
-      container.pack_start(label, false, false)
+      container.pack_start(label, false, false, 10)
 
       data[group].each do |entry|
         button = Gtk::Button.new("Start")
@@ -59,8 +59,8 @@ class Ui
 
     hbox = Gtk::HBox.new
     columns.each do |vbox|
-      hbox.pack_start(vbox, true, true, 10)
-      hbox.pack_start(vbox, true, true, 10)
+      hbox.pack_start(vbox, true, true, 20)
+      hbox.pack_start(vbox, true, true, 20)
     end
 
     window = Gtk::Window.new("Game Collection")
