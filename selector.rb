@@ -3,7 +3,7 @@
 require 'gtk2'
 
 class Parser
-  DB = '.gamecollection_metadata.csv'
+  DB = '/home/koenig/.gamecollection_metadata.csv'
   HEADERS = [:group, :title, :cmd]
 
   attr_accessor :data
@@ -18,39 +18,50 @@ class Parser
     csv.each do |entry|
       @data << Hash[HEADERS.zip(entry)]
     end
-    @data.sort! {|a,b| a[:group] <=> b[:group] }
+    @data.sort! {|a,b| a[:group] == b[:group] ? a[:title] <=> b[:title] : a[:group] <=> b[:group] }
   end
 end
 
 class Ui
+  COLUMNS = 4
+
   def initialize
-    left = Gtk::VBox.new
-    right = Gtk::VBox.new
+    columns = []
+    COLUMNS.times do
+      columns << Gtk::VBox.new
+    end
 
     data_raw = Parser.new.data
     data = data_raw.group_by {|i| i[:group]}
     data.keys.each do |group|
-      label = Gtk::Label.new(group)
-      if do_place_group_left(group, data_raw)
-        container = left
-      else
-        container = right
-      end
-      container.pack_start(Gtk::Label.new(""), false, false)
+      label = Gtk::Label.new
+      label.set_markup("<big><b>#{group}</b></big>")
+      label.set_alignment(0,0)
+
+      container = columns[get_column_index(group, data_raw)]
+      container.pack_start(Gtk::Label.new, false, false)
       container.pack_start(label, false, false)
 
       data[group].each do |entry|
-        button = Gtk::Button.new(entry[:title])
+        button = Gtk::Button.new("Start")
         button.signal_connect("clicked") do 
           system(entry[:cmd] + "&")
         end
-        container.pack_start(button, false, false)
+
+        hbox = Gtk::HBox.new
+        label = Gtk::Label.new(entry[:title])
+        label.set_alignment(0,0)
+        hbox.pack_start(label, true, true)
+        hbox.pack_start(button, false, false)
+        container.pack_start(hbox, false, false)
       end
     end
 
     hbox = Gtk::HBox.new
-    hbox.pack_start(left, true, true)
-    hbox.pack_start(right, true, true)
+    columns.each do |vbox|
+      hbox.pack_start(vbox, true, true, 10)
+      hbox.pack_start(vbox, true, true, 10)
+    end
 
     window = Gtk::Window.new("Game Collection")
     window.set_default_size(600,600)
@@ -62,27 +73,29 @@ class Ui
     window.show_all
   end
 
-  def do_place_group_left(group, data)
-    if @left_groups
-      return @left_groups.include? group
+  private
+  def get_column_index(group, data)
+    if @placement
+      return @placement[group]
     end
 
-    @left_groups = []
+    @placement = {}
     frequencies = data.group_by {|i| i[:group] }.map{|i| {i.first => i.last.count + 1}} # add one for group caption
     frequencies = frequencies.inject(:merge)
     item_count = 0
-    max = ((data.count + frequencies.count)/2.0).ceil
+    index = 0
+    max = ((data.count + frequencies.count)/COLUMNS.to_f).ceil
     frequencies.each do |group, freq|
       item_count += freq
-      @left_groups << group
+      @placement[group] = index
 
-      puts "item_count: #{item_count}, freq: #{freq}, group: #{group}, max: #{max}"
       if item_count >= max
-        break
+        index += 1
+        item_count = 0
       end
     end
 
-    return do_place_group_left(group, data)
+    return get_column_index(group, data)
   end
 end
 
