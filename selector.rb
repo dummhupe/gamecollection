@@ -3,7 +3,7 @@
 require 'gtk2'
 
 class Parser
-  DB = 'metadata.csv'
+  DB = '.gamecollection_metadata.csv'
   HEADERS = [:group, :title, :cmd]
 
   attr_accessor :data
