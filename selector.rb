@@ -60,7 +60,6 @@ class Ui
     hbox = Gtk::HBox.new
     columns.each do |vbox|
       hbox.pack_start(vbox, true, true, 20)
-      hbox.pack_start(vbox, true, true, 20)
     end
 
     window = Gtk::Window.new("Game Collection")
@@ -85,11 +84,22 @@ class Ui
     item_count = 0
     index = 0
     max = ((data.count + frequencies.count)/COLUMNS.to_f).ceil
+
+    puts frequencies
     frequencies.each do |group, freq|
+      if item_count + freq >= max + 10
+        # if next group would result in more than ten items more than average
+        # in a column, then put the group in the next column
+        index += 1
+        item_count = 0
+      end
+
       item_count += freq
       @placement[group] = index
 
       if item_count >= max
+        # group exceeds average number of items in a column
+        # -> put next group in next column
         index += 1
         item_count = 0
       end
