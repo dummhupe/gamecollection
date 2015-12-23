@@ -4,7 +4,7 @@ require 'gtk2'
 
 class Parser
   DB = '/home/koenig/.gamecollection_metadata.csv'
-  HEADERS = [:group, :title, :cmd]
+  HEADERS = [:group, :title, :sort, :cmd]
 
   attr_accessor :data
 
@@ -18,7 +18,23 @@ class Parser
     csv.each do |entry|
       @data << Hash[HEADERS.zip(entry)]
     end
-    @data.sort! {|a,b| a[:group] == b[:group] ? a[:title] <=> b[:title] : a[:group] <=> b[:group] }
+    @data.sort! {|a,b| 
+      if a[:group] == b[:group] 
+        if a[:sort] == b[:sort]
+          a[:title] <=> b[:title] 
+        else
+          if a[:sort].empty?
+            a[:title] <=> b[:sort]
+          elsif b[:sort].empty?
+            a[:sort] <=> b[:title]
+          else
+            a[:sort] <=> b[:sort]
+          end
+        end
+      else
+        a[:group] <=> b[:group]
+      end
+    }
   end
 end
 
@@ -85,7 +101,6 @@ class Ui
     index = 0
     max = ((data.count + frequencies.count)/COLUMNS.to_f).ceil
 
-    puts frequencies
     frequencies.each do |group, freq|
       if item_count + freq >= max + 10
         # if next group would result in more than ten items more than average
